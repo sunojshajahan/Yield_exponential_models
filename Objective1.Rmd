@@ -1,0 +1,78 @@
+---
+title: "Obective 1"
+author: "S. Sunoj"
+date: "2022-09-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load packages
+```{r, warning= FALSE, message=FALSE}
+
+# rm(list = ls())
+# gc()
+
+library(sf)
+library(dplyr)
+library(plyr)
+library(ggplot2)
+library(plotly)
+library(scales)
+library(tictoc)
+library(here)
+
+print("Packages loaded successfully!")
+
+source("exponential_model_functions.R")
+
+```
+
+
+# Load data
+
+```{r, message=FALSE}
+
+# Load training data
+load("../RData/Strips_NoOutlier_df.RData", verbose = TRUE)
+
+# Load validation data
+load("../RData/WF_validation_df.RData", verbose = TRUE)
+
+colnames(all_strips_dat)
+```
+
+# Plot one field
+```{r}
+# "DMD_GH1" "SLS_ABH" "SLS_NS"  "PSF_12"  "PSF_111" "SSF_66"  "SSF_121" "SSF_202"
+
+subfield <- "DMD_GH1"
+
+selstrip <- all_strips_dat %>% 
+  filter(Fieldname == subfield) %>% 
+  filter(Week == 29) %>% 
+  droplevels()
+
+selfield <- WF_validation_df %>% 
+  filter(Fieldname == subfield) %>% 
+  filter(Week == 29) %>% 
+  droplevels()
+
+cat("Dimenstion of strips data = ", dim(selstrip),"\n")
+cat("Dimenstion of strips data = ", dim(selfield))
+```
+
+
+```{r, figures-side, fig.show="hold", out.width="50%"}
+par(mar = c(4, 4, .1, .1))
+plot(st_as_sf(selstrip)["Yield.Mg.ha"], border = "transparent")
+plot(st_as_sf(selfield)["Yield.Mg.ha"], border = "transparent")
+
+```
+
+
+
+
+
