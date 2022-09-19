@@ -2,7 +2,9 @@
 title: "Obective 1"
 author: "S. Sunoj"
 date: "2022-09-13"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -50,29 +52,97 @@ colnames(all_strips_dat)
 
 subfield <- "DMD_GH1"
 
-selstrip <- all_strips_dat %>% 
+trainingdata <- all_strips_dat %>% 
   filter(Fieldname == subfield) %>% 
   filter(Week == 29) %>% 
   droplevels()
 
-selfield <- WF_validation_df %>% 
+testingdata <- WF_validation_df %>% 
   filter(Fieldname == subfield) %>% 
   filter(Week == 29) %>% 
   droplevels()
 
-cat("Dimenstion of strips data = ", dim(selstrip),"\n")
-cat("Dimenstion of strips data = ", dim(selfield))
+cat(" (Training) Dimension of strips data = ", dim(trainingdata),"\n")
+cat(" (Testing) Dimension of WF data without strips = ", dim(testingdata))
 ```
 
-
+# DMD_GH1
 ```{r, figures-side, fig.show="hold", out.width="50%"}
 par(mar = c(4, 4, .1, .1))
-plot(st_as_sf(selstrip)["Yield.Mg.ha"], border = "transparent")
-plot(st_as_sf(selfield)["Yield.Mg.ha"], border = "transparent")
+plot(st_as_sf(trainingdata)["Yield.Mg.ha"], border = "transparent", main = "Training data - Only strips")
+plot(st_as_sf(testingdata)["Yield.Mg.ha"], border = "transparent", main = "Testing data - Whole field without strips and percentile data")
 
 ```
 
+# Exponential model fitting with an example field
+```{r}
+# "DMD_GH1" "SLS_ABH" "SLS_NS"  "PSF_12"  "PSF_111" "SSF_66"  "SSF_121" "SSF_202"
+
+subfield <- "DMD_GH1"
+
+trainingdata <- all_strips_dat %>% 
+  filter(Fieldname == subfield) %>% 
+  # filter(Week == 35) %>% 
+  droplevels()
+
+testingdata <- WF_validation_df %>% 
+  filter(Fieldname == subfield) %>% 
+  # filter(Week == 35) %>% 
+  droplevels()
 
 
+if (!exists("results_df")){
+  results_df <- data.frame()
+}
+
+vi_names <- c("NDVI", "GNDVI", "EVI2", "SR", "EXG", "TGI", "GCVI")
+week_no <- unique(trainingdata$Week)
+
+tic()
+cat("Processing... \n")
+for (i in 1:length(vi_names)){
+  cat("Vegetation index = ", vi_names[i],"\n")
+    for (j in 1:length(week_no)){
+      
+      cat("Week = ", week_no[i],"\n")
+      # Subset the data
+      trainingdata <- all_strips_dat %>% 
+        filter(Fieldname == subfield) %>% 
+        filter(Week == week_no[j]) %>%
+        droplevels()
+
+      testingdata <- WF_validation_df %>%
+        filter(Fieldname == subfield) %>%
+        filter(Week == week_no[j]) %>%
+        droplevels()
+      
+      # Fit exponential model      
+      mod_fit <- myexpfit("Yield", vi_names[i], trainingdata)
+      
+      # Evaluate model performance by RMSE
+      mod_rmse <- getRMSE(mod_fit, "Yield", vi_names[i], testingdata)
+      
+      # Print pu
+      text_imp <- c(subfield, week_no[j], vi_names[i], as.numeric(mod_fit[1]), as.numeric(mod_fit[2]), 
+                    as.numeric(mod_fit[3]), as.numeric(mod_rmse[1]), as.numeric(mod_rmse[2]),
+                    as.numeric(mod_rmse[3]))
+
+      col_names <- c("Fieldname", "Week", "VI", "a_coeff", "b_coeff",
+                     "R2", "RMSE", "NRMSE", "MAE")
+      # 
+      # colnames(results_df) <- col_names
+      results_df <- rbind(results_df, text_imp)
+
+    }
+}
+
+colnames(results_df) <- col_names
+
+toc()
+
+# Save the results tp a CSV file
+# write.csv(results_df, "PartA_and_B_results.csv", row.names = FALSE)
+
+```
 
 
