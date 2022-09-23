@@ -1,0 +1,171 @@
+---
+title: "Obective 2"
+author: "S. Sunoj"
+date: "2022-09-20"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load packages
+```{r, echo = FALSE, warning= FALSE, message=FALSE}
+
+rm(list = ls())
+gc()
+
+library(sf)
+library(dplyr)
+library(plyr)
+library(ggplot2)
+library(plotly)
+library(scales)
+library(tictoc)
+library(here)
+library(cowplot)
+library(RColorBrewer)
+
+print("Packages loaded successfully!")
+
+```
+
+# Load data
+```{r}
+
+results_df <- read.csv("../RData/PartA_and_B_results.csv")
+
+results_df <- results_df %>% 
+  mutate(GrowthStage = Week) %>% 
+  droplevels()
+results_df$GrowthStage <- as.factor(as.character(results_df$GrowthStage))
+
+
+results_df$GrowthStage <- recode_factor(results_df$GrowthStage, "23" = "V1", "24" = "V2", "25" = "V3", "26" = "V4", "27" = "V6", "28" = "V8", "29" = "V9", "30" = "V10", "31" = "V12", "32" = "R1", "33" = "R2", "34" = "R3", "35" = "R4", "38" = "R6")
+
+
+```
+
+
+# Grain plot
+```{r, fig.width = 7, fig.height = 3}
+
+si_df <- results_df %>% 
+  filter(Unit == "SI" & VI == "NDVI" & Week >=27) %>% 
+  droplevels()
+
+grain_df <- si_df %>% 
+  filter(Fieldname == "DMD_GH1" | Fieldname == "SLS_ABH" | Fieldname == "SLS_NS") %>%
+  droplevels()
+
+grain_df$Fieldname <- factor(grain_df$Fieldname, levels = c("SLS_ABH", "SLS_NS", "DMD_GH1"))
+
+grain_df$Fieldname <- recode_factor(grain_df$Fieldname, SLS_ABH = "Grain A1", 
+                                SLS_NS = "Grain A2", 
+                                DMD_GH1 = "Grain B1")
+
+
+# grain_df$GrowthStage <- as.numeric(grain_df$GrowthStage)
+
+# Define the number of colors you want
+nb.cols <- length(unique(grain_df$GrowthStage))
+mycolors <- colorRampPalette(brewer.pal(8, "Oranges"))(nb.cols)
+# Create a ggplot with 18 colors 
+
+
+grain_plt <-  ggplot(grain_df, aes(x = factor(GrowthStage), y = as.numeric(RMSE), fill = factor(GrowthStage))) + 
+  geom_bar(stat='identity', color = "black", size = 0.4, width = 0.9, position = position_dodge(0.4)) + 
+  facet_wrap(~Fieldname) +
+  theme_bw() + 
+  # xlab("Vegetation indices") + 
+  # ylab("Root mean square error (RMSE, Mg/ha)") +
+  scale_fill_manual(values = mycolors) +
+  # scale_fill_manual(values = c("#E10000", "#FFB383", "#585959", "#C0C0C0", "#00A210", "#9BE186", "#8FAADC")) +
+    scale_y_continuous(limit = c(0.0, 1.6), breaks = seq(0.0, 1.6, 0.2), expand = expansion(mult = c(0, 0.02))) +   
+  scale_x_discrete(expand = expansion(mult = c(0.15, 0.15))) +
+  theme(legend.position = "none") +
+  # labs(fill = "Vegetation indices") + 
+  theme(axis.text.x = element_text(size = 11, color = "black", angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 12, color = "black"),
+        axis.title = element_blank(),
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 12, color = "black", face = "bold"),
+        legend.text = element_text(size = 12, color = "black"),
+        legend.title = element_text(size = 12, face = "bold"),
+        panel.border = element_rect(colour = "black", fill=NA, size=0.75))
+
+grain_plt
+
+```
+
+# Silage plot
+```{r, fig.width = 9.5, fig.height = 3}
+si_df <- results_df %>% 
+  filter(Unit == "SI" & VI == "NDVI" & Week >=27) %>% 
+  droplevels()
+
+silage_df <- si_df %>% 
+  filter(Fieldname != "DMD_GH1" & Fieldname != "SLS_ABH" & Fieldname != "SLS_NS") %>%
+  droplevels()
+
+silage_df$Fieldname <- factor(silage_df$Fieldname, levels = c("PSF_111", "PSF_12", "SSF_121", "SSF_202", "SSF_66"))
+
+silage_df$Fieldname <- recode_factor(silage_df$Fieldname, 
+                                     PSF_111 = "Silage A1", 
+                                PSF_12 = "Silage A2", 
+                                SSF_121 = "Silage B1",
+                                SSF_202 = "Silage B2",
+                                SSF_66 = "Silage B3")
+
+# Define the number of colors you want
+nb.cols <- length(unique(silage_df$GrowthStage))
+mycolors <- colorRampPalette(brewer.pal(8, "YlGn"))(nb.cols)
+# Create a ggplot with 18 colors 
+# Use scale_fill_manual
+
+
+silage_plt <-  ggplot(silage_df, aes(x = factor(GrowthStage), y = as.numeric(RMSE), fill = factor(GrowthStage))) + 
+  geom_bar(stat='identity', color = "black", size = 0.3, width = 0.9, position = position_dodge(0.4)) + 
+  facet_wrap(~Fieldname, nrow = 1) +
+  theme_bw() + 
+  # xlab("Vegetation indices") + 
+  ylab("Root mean square error (RMSE, Mg/ha)") +
+  scale_fill_manual(values = mycolors) +
+  # scale_fill_manual(values = c("#E10000", "#FFB383", "#585959", "#C0C0C0", "#00A210", "#9BE186", "#8FAADC")) +
+  scale_y_continuous(limit = c(0.0, 8.0), breaks = seq(0.0, 8.0, 1.0), expand = expansion(mult = c(0, 0.02))) + 
+  scale_x_discrete(expand = expansion(mult = c(0.15, 0.15))) + 
+  theme(legend.position = "none")+
+  # labs(fill = "Vegetation indices") + 
+  theme(axis.text.x = element_text(size = 11, color = "black", angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 12, color = "black"),
+        axis.title = element_blank(),
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 12, color = "black", face = "bold"), 
+        legend.text = element_text(size = 12, color = "black"), 
+        legend.title = element_text(size = 12, face = "bold"), 
+        panel.border = element_rect(colour = "black", fill=NA, size=0.75))
+
+silage_plt
+
+```
+
+
+# Combine plots and save
+```{r, fig.width = 9.5, fig.height = 6.2}
+# library(cowplot)
+
+ggdraw() +
+  draw_plot(silage_plt, x = 0.02, y = 0.5, width = 0.98, height = .48) +
+  draw_plot(grain_plt, x = 0, y = 0, width = .62, height = .48)
+  # draw_plot(bp, x = 0, y = 0, width = 1, height = 0.5) +
+  # draw_plot_label(label = c("A", "B", "C"), size = 15,
+  #                 x = c(0, 0.5, 0), y = c(1, 1, 0.5))
+
+# ggsave("PartB_plot.png", width = 9.5, height = 6.2, unit = "in")
+# 
+```
+
+
+
