@@ -14,8 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load packages
 ```{r, warning= FALSE, message=FALSE}
 
-# rm(list = ls())
-# gc()
+rm(list = ls())
+gc()
 
 library(sf)
 library(dplyr)
@@ -122,7 +122,7 @@ for (i in 1:length(vi_names)){
       # Evaluate model performance by RMSE
       mod_rmse <- getRMSE(mod_fit, "Yield", vi_names[i], testingdata)
       
-      # Print pu
+      # Creating a list to be stored as an entry in a table format 
       text_imp <- c(subfield, week_no[j], vi_names[i], as.numeric(mod_fit[1]), as.numeric(mod_fit[2]), 
                     as.numeric(mod_fit[3]), as.numeric(mod_rmse[1]), as.numeric(mod_rmse[2]),
                     as.numeric(mod_rmse[3]))
@@ -144,5 +144,124 @@ toc()
 # write.csv(results_df, "PartA_and_B_results.csv", row.names = FALSE)
 
 ```
+
+
+# Load data for plotting Figure 2
+```{r}
+
+# load("PartA_and_B_results.RData", verbose = TRUE)
+
+results_df <- read.csv("../RData/PartA_and_B_results.csv")
+
+```
+
+```{r}
+
+si_df <- results_df %>% 
+  filter(Unit == "SI") %>% 
+  filter(Week == "35") %>%
+  droplevels()
+
+unique(si_df$Fieldname)
+
+missing_df <- results_df %>%
+  filter(Fieldname == "PSF_111") %>%
+  filter(Unit == "SI") %>%
+  filter(Week == "34") %>%
+  droplevels()
+
+si_df <- rbind(si_df, missing_df)
+unique(si_df$Fieldname)
+
+si_df$Fieldname <- factor(si_df$Fieldname, levels = c("PSF_12", "PSF_111", "SSF_66", "SSF_121", "SSF_202",
+                                                      "SLS_ABH", "SLS_NS", "DMD_GH1"))
+
+
+si_df$VI <- factor(si_df$VI, levels = c("NDVI", "EVI2", "GNDVI", "GCVI", "SR", "EXG", "TGI"))
+
+grain_df <- si_df %>% 
+  filter(Fieldname == "DMD_GH1" | Fieldname == "SLS_ABH" | Fieldname == "SLS_NS") %>%
+  droplevels()
+
+grain_plt <-  ggplot(grain_df, aes(x = Fieldname, y = as.numeric(RMSE), fill = VI)) + 
+  geom_bar(stat='identity', color = "black", size = 0.4, position=position_dodge(), width = 0.7) + geom_text(aes(label= paste0(round(as.numeric(NRMSE),1), " %"), group = VI, angle = 90, vjust = 0.5, hjust = 1.2),position = position_dodge(width = 0.7), size = 3.2) + 
+  # facet_wrap(~Type) + 
+  theme_bw() + 
+  # xlab("Vegetation indices") + 
+  ylab("Root mean square error (RMSE, Mg/ha)") +
+  scale_fill_manual(values = c("#dededd", "#eedd89", "#bbcc32", "#ffaabc", "#ef8766", "#99ddff", "#77aadd")) +
+    scale_y_continuous(limit = c(0.0, 1.6), breaks = seq(0.0, 1.6, 0.2), expand = expansion(mult = c(0, 0.02))) + 
+  # theme(legend.position = "none")+
+  labs(fill = "Vegetation indices") + 
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 12, color = "black"),
+        axis.title = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid = element_blank(), 
+        legend.text = element_text(size = 12, color = "black"), 
+        legend.title = element_text(size = 12, face = "bold"), 
+        panel.border = element_rect(colour = "black", fill=NA, size=0.75))
+
+grain_plt
+
+# ggsave("Grain_RMSE_plot.png", width = 10, height =3, unit = "in")
+```
+
+
+```{r}
+silage_df <- si_df %>% 
+  filter(Fieldname != "DMD_GH1" & Fieldname != "SLS_ABH" & Fieldname != "SLS_NS") %>%
+  droplevels()
+
+silage_df$Fieldname <-
+  factor(
+    silage_df$Fieldname,
+    levels = c("PSF_111", "PSF_12", "SSF_121", "SSF_202", "SSF_66"))
+
+
+silage_plt <-  ggplot(silage_df, aes(x = Fieldname, y = as.numeric(RMSE), fill = VI)) + 
+  geom_bar(stat='identity', color = "black", size = 0.4, position=position_dodge(), width = 0.7) +   geom_text(aes(label= paste0(round(as.numeric(NRMSE),1), " %"), group = VI, angle = 90, vjust = 0.5, hjust = 1.2),position = position_dodge(width = 0.7), size = 3.2) + 
+  # facet_wrap(~Type) + 
+  theme_bw() + 
+  # xlab("Vegetation indices") + 
+  ylab("Root mean square error (RMSE, Mg/ha)") +
+  scale_fill_manual(values = c("#dededd", "#eedd89", "#bbcc32", "#ffaabc", "#ef8766", "#99ddff", "#77aadd")) +
+  # scale_fill_manual(values = c("#E10000", "#FFB383", "#585959", "#C0C0C0", "#00A210", "#9BE186", "#8FAADC")) +
+  scale_y_continuous(limit = c(0.0, 8.0), breaks = seq(0.0, 8.0, 1.0), expand = expansion(mult = c(0, 0.02))) + 
+  theme(legend.position = "none")+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 12, color = "black"),
+        axis.title = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid = element_blank(), 
+        panel.border = element_rect(colour = "black", fill=NA, size=0.75))
+
+silage_plt
+
+# ggsave("Silage_RMSE_plot.png", width = 10, height =6, unit = "in")
+
+
+# gridExtra::grid.arrange(grain_plt, silage_plt)
+
+# ggplotly(plt)
+
+```
+
+
+# Combine plots and save
+```{r}
+library(cowplot)
+
+ggdraw() +
+  draw_plot(silage_plt, x = 0.02, y = 0.5, width = 0.97, height = .48) +
+  draw_plot(grain_plt, x = 0, y = 0, width = .88, height = .48)
+  # draw_plot(bp, x = 0, y = 0, width = 1, height = 0.5) +
+  # draw_plot_label(label = c("A", "B", "C"), size = 15,
+  #                 x = c(0, 0.5, 0), y = c(1, 1, 0.5))
+
+# ggsave("PartA_plot.png", width = 8.5, height = 6.2, unit = "in")
+
+```
+
 
 
