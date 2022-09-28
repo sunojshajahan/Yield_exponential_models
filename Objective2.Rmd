@@ -3,8 +3,8 @@ title: "Obective 2"
 author: "S. Sunoj"
 date: "2022-09-20"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -34,17 +34,19 @@ print("Packages loaded successfully!")
 
 # Load data
 ```{r}
-
+# Read CSV from the saved folder
 results_df <- read.csv("../RData/PartA_and_B_results.csv")
+str(results_df)
+```
 
+## Assign growh stage to each week data
+```{r}
 results_df <- results_df %>% 
   mutate(GrowthStage = Week) %>% 
   droplevels()
 results_df$GrowthStage <- as.factor(as.character(results_df$GrowthStage))
 
-
 results_df$GrowthStage <- recode_factor(results_df$GrowthStage, "23" = "V1", "24" = "V2", "25" = "V3", "26" = "V4", "27" = "V6", "28" = "V8", "29" = "V9", "30" = "V10", "31" = "V12", "32" = "R1", "33" = "R2", "34" = "R3", "35" = "R4", "38" = "R6")
-
 
 ```
 
