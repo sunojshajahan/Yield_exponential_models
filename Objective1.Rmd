@@ -46,7 +46,7 @@ load("../RData/WF_validation_df.RData", verbose = TRUE)
 colnames(all_strips_dat)
 ```
 
-# Plot one field
+# Plot one field of training and testing field
 ```{r}
 # "DMD_GH1" "SLS_ABH" "SLS_NS"  "PSF_12"  "PSF_111" "SSF_66"  "SSF_121" "SSF_202"
 
@@ -146,7 +146,7 @@ toc()
 ```
 
 
-# Load data for plotting Figure 2
+# Load data for plotting Figure 2 in manuscript
 ```{r}
 
 # load("PartA_and_B_results.RData", verbose = TRUE)
