@@ -81,14 +81,11 @@ grain_plt <-  ggplot(grain_df, aes(x = factor(GrowthStage), y = as.numeric(RMSE)
   geom_bar(stat='identity', color = "black", size = 0.4, width = 0.9, position = position_dodge(0.4)) + 
   facet_wrap(~Fieldname) +
   theme_bw() + 
-  # xlab("Vegetation indices") + 
-  # ylab("Root mean square error (RMSE, Mg/ha)") +
   scale_fill_manual(values = mycolors) +
   # scale_fill_manual(values = c("#E10000", "#FFB383", "#585959", "#C0C0C0", "#00A210", "#9BE186", "#8FAADC")) +
     scale_y_continuous(limit = c(0.0, 1.6), breaks = seq(0.0, 1.6, 0.2), expand = expansion(mult = c(0, 0.02))) +   
   scale_x_discrete(expand = expansion(mult = c(0.15, 0.15))) +
   theme(legend.position = "none") +
-  # labs(fill = "Vegetation indices") + 
   theme(axis.text.x = element_text(size = 11, color = "black", angle = 90, vjust = 0.5, hjust = 1),
         axis.text.y = element_text(size = 12, color = "black"),
         axis.title = element_blank(),
