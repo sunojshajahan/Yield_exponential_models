@@ -74,8 +74,6 @@ grain_df$Fieldname <- recode_factor(grain_df$Fieldname, SLS_ABH = "Grain A1",
 # Define the number of colors you want
 nb.cols <- length(unique(grain_df$GrowthStage))
 mycolors <- colorRampPalette(brewer.pal(8, "Oranges"))(nb.cols)
-# Create a ggplot with 18 colors 
-
 
 grain_plt <-  ggplot(grain_df, aes(x = factor(GrowthStage), y = as.numeric(RMSE), fill = factor(GrowthStage))) + 
   geom_bar(stat='identity', color = "black", size = 0.4, width = 0.9, position = position_dodge(0.4)) + 
@@ -99,7 +97,7 @@ grain_plt
 
 ```
 
-# Silage plot
+# Silage plot for publication
 ```{r, fig.width = 9.5, fig.height = 3}
 si_df <- results_df %>% 
   filter(Unit == "SI" & VI == "NDVI" & Week >=27) %>% 

@@ -77,19 +77,15 @@ plot(st_as_sf(testingdata)["Yield.Mg.ha"], border = "transparent", main = "Testi
 # Exponential model fitting with an example field
 ```{r}
 # "DMD_GH1" "SLS_ABH" "SLS_NS"  "PSF_12"  "PSF_111" "SSF_66"  "SSF_121" "SSF_202"
-
 subfield <- "DMD_GH1"
 
 trainingdata <- all_strips_dat %>% 
   filter(Fieldname == subfield) %>% 
-  # filter(Week == 35) %>% 
   droplevels()
 
 testingdata <- WF_validation_df %>% 
   filter(Fieldname == subfield) %>% 
-  # filter(Week == 35) %>% 
   droplevels()
-
 
 if (!exists("results_df")){
   results_df <- data.frame()
